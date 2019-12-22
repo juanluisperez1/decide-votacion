@@ -6,6 +6,8 @@ from django.dispatch import receiver
 from base import mods
 from base.models import Auth, Key
 
+from django.core.validators import URLValidator
+
 
 class Question(models.Model):
     desc = models.TextField()
@@ -121,3 +123,22 @@ class Voting(models.Model):
 
     def __str__(self):
         return self.name
+
+
+
+
+class PoliticalParty(models.Model):
+
+    name = models.CharField(('Name'),max_length=200)
+    acronym = models.CharField(('Acronym'),max_length=10)
+    description = models.TextField(('Description'),blank=True, null=True)
+    headquarters = models.CharField(('Headquarters'),max_length=200,help_text='The direction of the headquarters')
+    image = models.CharField(('Image'),max_length=500,blank=True, null=True,help_text='Must be a link', validators=[URLValidator()])
+
+    def __str__(self):
+       return self.name
+
+   
+    class Meta:
+        unique_together = (('name', 'acronym'),)     
+           
