@@ -19,7 +19,7 @@ script:
 - rm local_settings.py
 deploy:
   provider: heroku
-  app: heroku-meet-travis
+  app: decidemoltres-votacion
   strategy: git
   api_key:
     secure: 8f9615ac-1997-44c6-93d3-5e523902468c
