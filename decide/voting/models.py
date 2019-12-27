@@ -9,6 +9,23 @@ from base.models import Auth, Key
 from django.core.validators import URLValidator
 
 
+
+class PoliticalParty(models.Model):
+
+    name = models.CharField(('Name'),max_length=200)
+    acronym = models.CharField(('Acronym'),max_length=10)
+    description = models.TextField(('Description'),blank=True, null=True)
+    headquarters = models.CharField(('Headquarters'),max_length=200,help_text='The direction of the headquarters')
+    image = models.CharField(('Image'),max_length=500,blank=True, null=True,help_text='Must be a link', validators=[URLValidator()])
+
+    def __str__(self):
+       return self.name
+
+   
+    class Meta:
+        unique_together = (('name', 'acronym'),)
+
+
 class Question(models.Model):
     desc = models.TextField()
 
@@ -32,8 +49,17 @@ class QuestionOption(models.Model):
 
 class Voting(models.Model):
     name = models.CharField(max_length=200)
-    desc = models.TextField(blank=True, null=True)
+    desc = models.TextField(("Description"),blank=True, null=True)
     question = models.ForeignKey(Question, related_name='voting', on_delete=models.CASCADE)
+
+    TIPES_OF_VOTINGS = [
+        ('primary', 'Primary'),
+        ('congress', 'Congress'),
+    ]
+
+    tipe = models.TextField(("Type"),blank=False, null=False, choices=TIPES_OF_VOTINGS)
+    political_party = models.ForeignKey(PoliticalParty, related_name='voting', on_delete=models.CASCADE)
+
 
     start_date = models.DateTimeField(blank=True, null=True)
     end_date = models.DateTimeField(blank=True, null=True)
@@ -127,18 +153,5 @@ class Voting(models.Model):
 
 
 
-class PoliticalParty(models.Model):
-
-    name = models.CharField(('Name'),max_length=200)
-    acronym = models.CharField(('Acronym'),max_length=10)
-    description = models.TextField(('Description'),blank=True, null=True)
-    headquarters = models.CharField(('Headquarters'),max_length=200,help_text='The direction of the headquarters')
-    image = models.CharField(('Image'),max_length=500,blank=True, null=True,help_text='Must be a link', validators=[URLValidator()])
-
-    def __str__(self):
-       return self.name
-
-   
-    class Meta:
-        unique_together = (('name', 'acronym'),)     
+     
            
