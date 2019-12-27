@@ -11,6 +11,8 @@ assignees: ''
 
 **What is the expected output?**
 
+**What do you see instead?**
+
 **What version of the product are you using?**
 
 **Provide extra information**
