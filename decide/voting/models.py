@@ -8,7 +8,11 @@ from base.models import Auth, Key
 
 from django.core.validators import URLValidator
 
+from django.contrib.auth.models import User
 
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+from authentication.models import UserProfile
 
 class PoliticalParty(models.Model):
 
@@ -31,12 +35,20 @@ class Question(models.Model):
 
     def __str__(self):
         return self.desc
+   
 
 
 class QuestionOption(models.Model):
     question = models.ForeignKey(Question, related_name='options', on_delete=models.CASCADE)
     number = models.PositiveIntegerField(blank=True, null=True)
-    option = models.TextField()
+    USERS = []
+    allUsers = User.objects.all()
+   
+    for user in allUsers:
+        newOption= (user.username,user.username)
+        USERS.append(newOption)
+
+    option = models.TextField(choices=USERS)
 
     def save(self):
         if not self.number:
@@ -69,6 +81,26 @@ class Voting(models.Model):
 
     tally = JSONField(blank=True, null=True)
     postproc = JSONField(blank=True, null=True)
+
+    def clean(self):
+
+        politicalPartyVoting= self.political_party
+
+        question_id=self.question
+        allQuestionOptions = QuestionOption.objects.filter(question_id = question_id)
+        
+        for questionOption in allQuestionOptions:
+           
+            user = User.objects.get(username = questionOption.option)
+            
+            try:
+                userProfile = UserProfile.objects.get(related_user_id = user.id)
+            except:
+                raise ValidationError(_('All the users in the options of the question must have a user profile.'))
+
+            politicalPartyUser = PoliticalParty.objects.get(pk = userProfile.related_political_party_id)
+            if politicalPartyUser != politicalPartyVoting :
+                raise ValidationError(_('You must select users of the same political party that the voting.'))    
 
     def create_pubkey(self):
         if self.pub_key or not self.auths.count():
