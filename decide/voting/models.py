@@ -41,14 +41,7 @@ class Question(models.Model):
 class QuestionOption(models.Model):
     question = models.ForeignKey(Question, related_name='options', on_delete=models.CASCADE)
     number = models.PositiveIntegerField(blank=True, null=True)
-    USERS = []
-    allUsers = User.objects.all()
-   
-    for user in allUsers:
-        newOption= (user.username,user.username)
-        USERS.append(newOption)
-
-    option = models.TextField(choices=USERS)
+    option = models.TextField(help_text='You must put a valid username')
 
     def save(self):
         if not self.number:
@@ -84,23 +77,29 @@ class Voting(models.Model):
 
     def clean(self):
 
-        politicalPartyVoting= self.political_party
+        if(self.tipe=='primary'):
 
-        question_id=self.question
-        allQuestionOptions = QuestionOption.objects.filter(question_id = question_id)
-        
-        for questionOption in allQuestionOptions:
-           
-            user = User.objects.get(username = questionOption.option)
+            politicalPartyVoting= self.political_party
+
+            question_id=self.question
+            allQuestionOptions = QuestionOption.objects.filter(question_id = question_id)
             
-            try:
-                userProfile = UserProfile.objects.get(related_user_id = user.id)
-            except:
-                raise ValidationError(_('All the users in the options of the question must have a user profile.'))
+            for questionOption in allQuestionOptions:
+            
+                try:
+                    user = User.objects.get(username = questionOption.option)
+                except:
+                    raise ValidationError(_('You must put usernames in the question´s options.'))
 
-            politicalPartyUser = PoliticalParty.objects.get(pk = userProfile.related_political_party_id)
-            if politicalPartyUser != politicalPartyVoting :
-                raise ValidationError(_('You must select users of the same political party that the voting.'))    
+                
+                try:
+                    userProfile = UserProfile.objects.get(related_user_id = user.id)
+                except:
+                    raise ValidationError(_('All the users in the options of the question must have a user profile.'))
+
+                politicalPartyUser = PoliticalParty.objects.get(pk = userProfile.related_political_party_id)
+                if politicalPartyUser != politicalPartyVoting :
+                    raise ValidationError(_('You must select users of the same political party that the voting.'))    
 
     def create_pubkey(self):
         if self.pub_key or not self.auths.count():
