@@ -13,6 +13,23 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from authentication.models import UserProfile
+from datetime import date
+
+def age_calculator(birthdate):  
+         
+   today=date.today()
+
+   try: 
+       birthday = birthdate.replace(year=today.year)  
+   except ValueError:   
+       birthday = birthdate.replace(year=today.year, day=birthdate.day - 1) 
+    
+   if birthday > today:          
+       return today.year - birthdate.year - 1 
+   else: 
+       return today.year - birthdate.year 
+
+
 
 class PoliticalParty(models.Model):
 
@@ -57,13 +74,16 @@ class Voting(models.Model):
     desc = models.TextField(("Description"),blank=True, null=True)
     question = models.ForeignKey(Question, related_name='voting', on_delete=models.CASCADE)
 
+    PRESIDENTIALPRIMARIES = 'PP'
+    SENATEPRIMARIES = 'SP'
+
     TIPES_OF_VOTINGS = [
-        ('primary', 'Primary'),
-        ('congress', 'Congress'),
+        (PRESIDENTIALPRIMARIES, 'Presidential primaries'),
+        (SENATEPRIMARIES, 'Senate primaries'),
     ]
 
     tipe = models.TextField(("Type"),blank=False, null=False, choices=TIPES_OF_VOTINGS)
-    political_party = models.ForeignKey(PoliticalParty, related_name='voting', on_delete=models.CASCADE)
+    political_party = models.ForeignKey(PoliticalParty, related_name='voting', on_delete=models.CASCADE,blank=True, null=True,)
 
 
     start_date = models.DateTimeField(blank=True, null=True)
@@ -76,30 +96,40 @@ class Voting(models.Model):
     postproc = JSONField(blank=True, null=True)
 
     def clean(self):
-
-        if(self.tipe=='primary'):
+ 
+        if(self.tipe=='PP' or self.tipe=='SP'):
 
             politicalPartyVoting= self.political_party
 
+            if(politicalPartyVoting== None):
+                raise ValidationError(_('This type of votings must have political party.'))    
+        
             question_id=self.question
             allQuestionOptions = QuestionOption.objects.filter(question_id = question_id)
-            
             for questionOption in allQuestionOptions:
-            
+                
                 try:
                     user = User.objects.get(username = questionOption.option)
                 except:
                     raise ValidationError(_('You must put usernames in the question´s options.'))
 
-                
                 try:
                     userProfile = UserProfile.objects.get(related_user_id = user.id)
                 except:
                     raise ValidationError(_('All the users in the options of the question must have a user profile.'))
 
+                if(userProfile.employment=='M'):
+                    raise ValidationError(_('The user can not be a militant. He must have another  higher employment.'))
+
+                years= age_calculator(userProfile.birthdate)
+                print(years)
+                if(years<18):
+                    raise ValidationError(_('All users of the options must be over 18 years of age.'))
+
                 politicalPartyUser = PoliticalParty.objects.get(pk = userProfile.related_political_party_id)
                 if politicalPartyUser != politicalPartyVoting :
                     raise ValidationError(_('You must select users of the same political party that the voting.'))    
+        
 
     def create_pubkey(self):
         if self.pub_key or not self.auths.count():
