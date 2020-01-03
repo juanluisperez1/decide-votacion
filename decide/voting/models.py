@@ -119,7 +119,7 @@ class Voting(models.Model):
     def get_votes(self, token=''):
         # gettings votes from store
         votes = mods.get('store', params={'voting_id': self.id}, HTTP_AUTHORIZATION='Token ' + token)
-        # anon votes
+        #anon votes
         return [[i['a'], i['b']] for i in votes]
 
     def tally_votes(self, token=''):
