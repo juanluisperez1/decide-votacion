@@ -83,7 +83,7 @@ class Voting(models.Model):
     TIPES_OF_VOTINGS = [
         (PRESIDENTIALPRIMARIES, 'Presidential primaries'),
         (SENATEPRIMARIES, 'Senate primaries'),
-        (SENATE, 'Senate')
+        (SENATE, 'Senate'),
         (PRESIDENTIAL, 'Presidential'),
     ]
 
