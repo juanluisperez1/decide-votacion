@@ -77,10 +77,13 @@ class Voting(models.Model):
 
     PRESIDENTIALPRIMARIES = 'PP'
     SENATEPRIMARIES = 'SP'
+    SENATE = 'S'
 
     TIPES_OF_VOTINGS = [
         (PRESIDENTIALPRIMARIES, 'Presidential primaries'),
         (SENATEPRIMARIES, 'Senate primaries'),
+        (SENATE, 'Senate')
+
     ]
 
     tipe = models.TextField(("Type"),blank=False, null=False, choices=TIPES_OF_VOTINGS)
