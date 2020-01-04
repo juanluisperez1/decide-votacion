@@ -120,8 +120,14 @@ class Voting(models.Model):
                     raise ValidationError(_('All the users in the options of the question must have a user profile.'))
 
                 if(userProfile.employment=='M'):
-                    raise ValidationError(_('The user can not be a militant. He must have another  higher employment.'))
+                    raise ValidationError(_('The users in the options can not be a militant. He must have another  higher employment.'))
 
+                if(self.tipe=='PP' and userProfile.employment=='S'):
+                    raise ValidationError(_('The users in the options can not be a senator.'))
+    
+                elif(self.tipe=='SP' and userProfile.employment=='P'):
+                    raise ValidationError(_('The users in the options can not be a president.'))
+    
                 years= age_calculator(userProfile.birthdate)
                 print(years)
                 if(years<18):
@@ -185,7 +191,7 @@ class Voting(models.Model):
         self.tally = response.json()
         self.save()
 
-        self.do_postproc()
+        return self.do_postproc()
 
     def do_postproc(self):
         tally = self.tally
@@ -203,11 +209,52 @@ class Voting(models.Model):
                 'votes': votes
             })
 
+        winner= opts[0]
+        tie=False        
+        for w in opts:
+            if(w['votes'] > winner['votes']):
+                winner=w
+
+        optsWithoutWinner = opts
+        optsWithoutWinner.remove(winner)
+        for w in optsWithoutWinner:
+            if(w['votes'] == winner['votes']):
+                tie=True
+                print('empate')
+                break        
+                
+        if(self.tipe=='PP'):
+            
+            politicalParty = self.political_party
+            user = User.objects.get(username = winner['option'])
+            
+            if(not(politicalParty.president == None)):
+                oldPresidentUserProfile = UserProfile.objects.get(related_political_party = politicalParty, employment='P')
+                oldPresidentUserProfile.employment = 'B'
+                oldPresidentUserProfile.save()
+           
+
+            
+            newPresidentUserProfile = UserProfile.objects.get(related_user_id = user.id)
+            newPresidentUserProfile.employment = 'P'
+            newPresidentUserProfile.save()
+            
+            politicalParty.president = winner['option']
+            politicalParty.save()
+
+        elif(self.tipe=='SP'):
+
+            user = User.objects.get(username = winner['option'])
+            newSenatorUserProfile = UserProfile.objects.get(related_user_id = user.id)
+            newSenatorUserProfile.employment = 'S'
+            newSenatorUserProfile.save()
+
         data = { 'type': 'IDENTITY', 'options': opts }
         postp = mods.post('postproc', json=data)
 
         self.postproc = postp
         self.save()
+        return tie
 
     def __str__(self):
         return self.name

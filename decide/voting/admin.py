@@ -42,7 +42,9 @@ class VotingAdmin(admin.ModelAdmin):
     def tally(self, request, queryset):
         for v in queryset.filter(end_date__lt=timezone.now()):
             token = request.session.get('auth-token', '')
-            v.tally_votes(token)
+            tie = v.tally_votes(token)
+            if (tie):
+                self.message_user(request, "The tally was successful but the voting was INVALID because a tie has occurred (one of the tied options has been given as the winner). Repeat the vote if you want to break the tie.")
 
     actions = [ start, stop, tally ]
 
