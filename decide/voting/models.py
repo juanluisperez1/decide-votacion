@@ -38,6 +38,7 @@ class PoliticalParty(models.Model):
     description = models.TextField(('Description'),blank=True, null=True)
     headquarters = models.CharField(('Headquarters'),max_length=200,help_text='The direction of the headquarters')
     image = models.CharField(('Image'),max_length=500,blank=True, null=True,help_text='Must be a link', validators=[URLValidator()])
+    president = models.CharField(max_length=151, blank=True, null=True,help_text='You must do a primary presidential voting if you want select a new president')
 
     def __str__(self):
        return self.name

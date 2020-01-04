@@ -47,6 +47,9 @@ class VotingAdmin(admin.ModelAdmin):
     actions = [ start, stop, tally ]
 
 
+class PoliticalPartyAdmin(admin.ModelAdmin):
+    readonly_fields = ('president',)
+
 admin.site.register(Voting, VotingAdmin)
 admin.site.register(Question, QuestionAdmin)
-admin.site.register(PoliticalParty)
+admin.site.register(PoliticalParty,PoliticalPartyAdmin )
