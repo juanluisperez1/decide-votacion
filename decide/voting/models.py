@@ -77,10 +77,12 @@ class Voting(models.Model):
 
     PRESIDENTIALPRIMARIES = 'PP'
     SENATEPRIMARIES = 'SP'
+    PRESIDENTIAL = 'P'
 
     TIPES_OF_VOTINGS = [
         (PRESIDENTIALPRIMARIES, 'Presidential primaries'),
         (SENATEPRIMARIES, 'Senate primaries'),
+        (PRESIDENTIAL, 'Presidential'),
     ]
 
     tipe = models.TextField(("Type"),blank=False, null=False, choices=TIPES_OF_VOTINGS)
@@ -135,8 +137,36 @@ class Voting(models.Model):
 
                 politicalPartyUser = PoliticalParty.objects.get(pk = userProfile.related_political_party_id)
                 if politicalPartyUser != politicalPartyVoting :
-                    raise ValidationError(_('You must select users of the same political party that the voting.'))    
-        
+                    raise ValidationError(_('You must select users of the same political party that the voting.'))  
+
+        elif(self.tipe=='P'): 
+
+            politicalPartyVoting= self.political_party
+
+            if(politicalPartyVoting!= None):
+                raise ValidationError(_('This type of voting must not have a realted political party.')) 
+
+            question_id=self.question
+            allQuestionOptions = QuestionOption.objects.filter(question_id = question_id)
+            for questionOption in allQuestionOptions:
+                
+                try:
+                    user = User.objects.get(username = questionOption.option)
+                except:
+                    raise ValidationError(_('You must put usernames in the question´s options.'))
+
+                try:
+                    userProfile = UserProfile.objects.get(related_user_id = user.id)
+                except:
+                    raise ValidationError(_('All the users in the options of the question must have a user profile.'))
+
+                userProfile = UserProfile.objects.get(related_user_id = user.id)
+                hisPoliticalParty = userProfile.related_political_party
+
+                if(hisPoliticalParty==None):
+                    raise ValidationError(_('All the user profiles of the users in the options must have a related political party.'))     
+                elif(hisPoliticalParty.president!=questionOption.option):
+                    raise ValidationError(_('All the users in the options must be president of his corresponding political party.'))
 
     def create_pubkey(self):
         if self.pub_key or not self.auths.count():
