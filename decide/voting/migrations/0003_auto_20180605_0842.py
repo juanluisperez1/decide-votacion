@@ -8,6 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('voting', '0002_auto_20180302_1100'),
+        ('base', '0001_initial'),
     ]
 
     operations = [

@@ -4,27 +4,10 @@ from django.utils import timezone
 from .models import QuestionOption
 from .models import Question
 from .models import Voting
+from .models import PoliticalParty
 
 from .filters import StartedFilter
 
-
-def start(modeladmin, request, queryset):
-    for v in queryset.all():
-        v.create_pubkey()
-        v.start_date = timezone.now()
-        v.save()
-
-
-def stop(ModelAdmin, request, queryset):
-    for v in queryset.all():
-        v.end_date = timezone.now()
-        v.save()
-
-
-def tally(ModelAdmin, request, queryset):
-    for v in queryset.filter(end_date__lt=timezone.now()):
-        token = request.session.get('auth-token', '')
-        v.tally_votes(token)
 
 
 class QuestionOptionInline(admin.TabularInline):
@@ -43,8 +26,32 @@ class VotingAdmin(admin.ModelAdmin):
     list_filter = (StartedFilter,)
     search_fields = ('name', )
 
+    def start(self, request, queryset):
+        for v in queryset.all():
+            v.create_pubkey()
+            v.start_date = timezone.now()
+            v.save()
+
+
+    def stop(self, request, queryset):
+        for v in queryset.all():
+            v.end_date = timezone.now()
+            v.save()
+
+
+    def tally(self, request, queryset):
+        for v in queryset.filter(end_date__lt=timezone.now()):
+            token = request.session.get('auth-token', '')
+            tie = v.tally_votes(token)
+            if (tie):
+                self.message_user(request, "The tally was successful but the voting was INVALID because a tie has occurred (one of the tied options has been given as the winner). Repeat the vote if you want to break the tie.")
+
     actions = [ start, stop, tally ]
 
 
+class PoliticalPartyAdmin(admin.ModelAdmin):
+    readonly_fields = ('president',)
+
 admin.site.register(Voting, VotingAdmin)
 admin.site.register(Question, QuestionAdmin)
+admin.site.register(PoliticalParty,PoliticalPartyAdmin )
