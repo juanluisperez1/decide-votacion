@@ -160,10 +160,12 @@ class Voting(models.Model):
         tally = self.tally
         options = self.question.options.all()
 
+        res = self.multiple_votes(tally)
+
         opts = []
         for opt in options:
             if isinstance(tally, list):
-                votes = tally.count(opt.number)
+                votes = res.count(opt.number)
             else:
                 votes = 0
             opts.append({
@@ -177,6 +179,14 @@ class Voting(models.Model):
 
         self.postproc = postp
         self.save()
+
+    def multiple_votes(self,tally):
+        res=[]
+        for x in tally:
+            for y in str(x):
+                res.append(int(y))
+        return res
+
 
     def __str__(self):
         return self.name
