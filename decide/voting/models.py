@@ -30,6 +30,8 @@ def age_calculator(birthdate):
        return today.year - birthdate.year 
 
 
+class CreatePresidentiaElection(models.Model):
+    pass
 
 class PoliticalParty(models.Model):
 

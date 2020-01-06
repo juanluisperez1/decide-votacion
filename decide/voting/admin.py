@@ -1,10 +1,12 @@
 from django.contrib import admin
 from django.utils import timezone
+from django.conf import settings
 
 from .models import QuestionOption
 from .models import Question
 from .models import Voting
 from .models import PoliticalParty
+from .models import CreatePresidentiaElection
 
 from .filters import StartedFilter
 
@@ -52,6 +54,33 @@ class VotingAdmin(admin.ModelAdmin):
 class PoliticalPartyAdmin(admin.ModelAdmin):
     readonly_fields = ('president',)
 
+class CreatePresidentialVotingAdmin(admin.ModelAdmin):
+
+    def createPresidentialVoting(self, request, queryset):
+        q = Question(desc='Who do you want the president of Españistán to be?')
+        q.save()
+        for i in PoliticalParty.objects.all():
+            opt = QuestionOption(question=q, option=i.president)
+            opt.save()
+        v = Voting(name='Presidential Voting', question=q)
+        v.save()
+
+        a, _ = Auth.objects.get_or_create(url=settings.BASEURL,
+                                          defaults={'me': True, 'name': 'test auth'})                                   
+        a.save()
+        v.auths.add(a) 
+
+        v.create_pubkey()
+
+        v.tipe = 'presidential'
+        v.save()
+        self.message_user(request, "Presidential election successfully created" )  
+
+    createPresidentialVoting.short_description = "Create new Presidential voting"
+
+    actions = [createPresidentialVoting, ]
+
 admin.site.register(Voting, VotingAdmin)
 admin.site.register(Question, QuestionAdmin)
 admin.site.register(PoliticalParty,PoliticalPartyAdmin )
+admin.site.register(CreatePresidentiaElection, CreatePresidentialVotingAdmin)
