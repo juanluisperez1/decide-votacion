@@ -5,8 +5,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.response import Response
 
-from .models import Question, QuestionOption, Voting
-from .serializers import SimpleVotingSerializer, VotingSerializer, VotingPerUserSerializer
+from .models import Question, QuestionOption, Voting, PoliticalParty
+from .serializers import SimpleVotingSerializer, VotingSerializer, VotingPerUserSerializer, PoliticalPartySerializer
 from base.perms import UserIsStaff
 from base.models import Auth
 from census.models import Census
@@ -111,3 +111,18 @@ class VotingsPerUser(generics.ListCreateAPIView):
             voting = Voting.objects.get(pk = census.voting_id)
             queryset.append(voting)
         return queryset
+
+
+#Adding CRUD methods for political parties
+
+# For get and post request methods
+class PoliticalPartyList(generics.ListCreateAPIView):
+    queryset = PoliticalParty.objects.all()
+    serializer_class = PoliticalPartySerializer
+
+
+#For put and delete methods
+#For get a political party with pk of political parties
+class PoliticalPartyDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = PoliticalParty.objects.all()
+    serializer_class = PoliticalPartySerializer

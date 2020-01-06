@@ -50,4 +50,15 @@ class VotingPerUserSerializer(serializers.HyperlinkedModelSerializer):
         model = Voting
         fields = ('id', 'name', 'desc', 'question', 'start_date',
                   'end_date', 'pub_key', 'auths', 'tally', 'postproc', 
-                  'tipe', 'political_party')        
+                  'tipe', 'political_party')       
+
+
+
+#Political Party Serializer
+
+class PoliticalPartySerializer(serializers.HyperlinkedModelSerializer):
+    
+    class Meta:
+        model = PoliticalParty
+        fields = ( 'name', 'acronym', 'description', 'headquarters',
+                  'image', 'president')   
