@@ -53,17 +53,6 @@ class Question(models.Model):
     number = models.PositiveIntegerField(editable = False, null = True)
     yes_no_question = models.BooleanField(default=False,verbose_name="Yes/No question", help_text="Check the box to generate automatically the options yes/no ")
 
-    # def save(self):
-    #     # Automatic assignment for the question number
-    #     if not self.number:
-    #         questions = self.yes_no_question
-    #         if questions:
-    #             self.number = questions + 1
-    #         else:
-    #             self.number = 1
-    
-    #     return super().save()
-
     def __str__(self):
         return self.desc
 
@@ -122,6 +111,13 @@ class Voting(models.Model):
     postproc = JSONField(blank=True, null=True)
 
     def clean(self):
+
+        if(self.tipe=='O'):
+            
+            politicalPartyVoting= self.political_party
+
+            if(politicalPartyVoting != None):
+                raise ValidationError(_('This type of votings must not have political party.'))
  
         if(self.tipe=='PP' or self.tipe=='SP'):
 
