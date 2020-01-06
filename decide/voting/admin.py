@@ -6,7 +6,7 @@ from .models import QuestionOption
 from .models import Question
 from .models import Voting
 from .models import PoliticalParty
-from .models import CreatePresidentiaElection
+from mixnet.models import Auth
 
 from .filters import StartedFilter
 
@@ -54,15 +54,15 @@ class VotingAdmin(admin.ModelAdmin):
 class PoliticalPartyAdmin(admin.ModelAdmin):
     readonly_fields = ('president',)
 
-class CreatePresidentialVotingAdmin(admin.ModelAdmin):
-
     def createPresidentialVoting(self, request, queryset):
-        q = Question(desc='Who do you want the president of Españistán to be?')
-        q.save()
-        for i in PoliticalParty.objects.all():
-            opt = QuestionOption(question=q, option=i.president)
+        question = Question(desc='Who do you want the president of Españistán to be?')
+        question.save()
+
+        for i in queryset.all():
+            opt = QuestionOption(question=question, option=i.president)
             opt.save()
-        v = Voting(name='Presidential Voting', question=q)
+
+        v = Voting(name='Presidential Voting', question=question)
         v.save()
 
         a, _ = Auth.objects.get_or_create(url=settings.BASEURL,
@@ -82,5 +82,4 @@ class CreatePresidentialVotingAdmin(admin.ModelAdmin):
 
 admin.site.register(Voting, VotingAdmin)
 admin.site.register(Question, QuestionAdmin)
-admin.site.register(PoliticalParty,PoliticalPartyAdmin )
-admin.site.register(CreatePresidentiaElection, CreatePresidentialVotingAdmin)
+admin.site.register(PoliticalParty,PoliticalPartyAdmin)
