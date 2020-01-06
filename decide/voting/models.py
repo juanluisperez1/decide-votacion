@@ -50,11 +50,30 @@ class PoliticalParty(models.Model):
 
 class Question(models.Model):
     desc = models.TextField()
+    number = models.PositiveIntegerField(editable = False, null = True)
+    yes_no_question = models.BooleanField(default=False,verbose_name="Yes/No question", help_text="Check the box to generate automatically the options yes/no ")
+
+    # def save(self):
+    #     # Automatic assignment for the question number
+    #     if not self.number:
+    #         questions = self.yes_no_question
+    #         if questions:
+    #             self.number = questions + 1
+    #         else:
+    #             self.number = 1
+    
+    #     return super().save()
 
     def __str__(self):
         return self.desc
-   
 
+@receiver(post_save, sender=Question)
+def check_question(sender, instance, **kwargs):
+    if instance.yes_no_question==True and instance.options.all().count()==0:
+        op1 = QuestionOption(question=instance, number=1, option="Si")
+        op1.save()
+        op2 = QuestionOption(question=instance, number=2, option="No") 
+        op2.save()
 
 class QuestionOption(models.Model):
     question = models.ForeignKey(Question, related_name='options', on_delete=models.CASCADE)
@@ -79,12 +98,14 @@ class Voting(models.Model):
     SENATEPRIMARIES = 'SP'
     SENATE = 'S'
     PRESIDENTIAL = 'P'
+    OTHER = 'O'
 
     TIPES_OF_VOTINGS = [
         (PRESIDENTIALPRIMARIES, 'Presidential primaries'),
         (SENATEPRIMARIES, 'Senate primaries'),
         (SENATE, 'Senate'),
         (PRESIDENTIAL, 'Presidential'),
+        (OTHER, 'Other'),
     ]
 
     tipe = models.TextField(("Type"),blank=False, null=False, choices=TIPES_OF_VOTINGS)
