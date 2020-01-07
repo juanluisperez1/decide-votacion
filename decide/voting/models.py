@@ -241,6 +241,12 @@ class Voting(models.Model):
                 'votes': votes
             })
 
+        data = { 'type': 'IDENTITY', 'options': opts }
+        postp = mods.post('postproc', json=data)
+
+        self.postproc = postp
+        self.save()
+
         winner= opts[0]
         tie=False        
         for w in opts:
@@ -281,11 +287,7 @@ class Voting(models.Model):
             newSenatorUserProfile.employment = 'S'
             newSenatorUserProfile.save()
 
-        data = { 'type': 'IDENTITY', 'options': opts }
-        postp = mods.post('postproc', json=data)
-
-        self.postproc = postp
-        self.save()
+        
         return tie
 
     def __str__(self):
