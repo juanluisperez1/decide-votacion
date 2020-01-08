@@ -208,3 +208,18 @@ class VotingTestCase(BaseTestCase):
         response = self.client.put('/voting/{}/'.format(voting.pk), data, format='json')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), 'Voting already tallied')
+
+class VotingsPerUserAPI(BaseTestCase):
+
+    def setUp(self):
+        super().setUp()
+
+    def tearDown(self):
+        super().tearDown()
+
+    def test_get_voting_per_user_empty(self):
+
+        response = self.client.get('/voting/user/?id={}'.format(-1))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
