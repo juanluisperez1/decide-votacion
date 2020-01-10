@@ -213,6 +213,148 @@ class VotingTestCase(BaseTestCase):
         # self.assertEqual(response.status_code, 400)
         # self.assertEqual(response.json(), 'Voting already tallied')
 
+    def test_create_political_party(self):
+    
+        test=[
+             #We create a correct political party
+            ['test name','ta','test description','test headquarters','https;//testImage.es',None],
+            #We try create the same political party
+            ['test name','ta','test description','bad','https;//testImage.es',IntegrityError],
+            #We try create the a political party with a bad name
+            [None,'ta2','test description','bad','https;//testImage.es',IntegrityError],
+            #We try create the a political party with a bad acronym
+            ['test name',None,'test description','bad','https;//testImage.es',IntegrityError],
+            #We try create the a political party with a bad headquarters
+            ['test name',None,'test description',None,'https;//testImage.es',IntegrityError],
+            #We try create the a political party with a bad URL
+            ['test name',None,'test description',None,'testImage',IntegrityError]
+        ]
+        
+        for value in test:
+
+            try:
+                with transaction.atomic():
+                    political_party = PoliticalParty(name=value[0], acronym=value[1],description=value[2], headquarters=value[3],image=value[4])
+                    political_party.save()
+                    political_party_DB = PoliticalParty.objects.get(name=value[0])
+            
+                self.assertEqual(political_party, political_party_DB)
+
+                if(value[5] != None):
+                    self.assertEqual(False, True)
+
+            except value[5]:
+                self.assertEqual(True, True)
+            except Exception:    
+                self.assertEqual(False, True)
+
+
+
+    def create_voting_presidential_primaries(self):
+
+        u = User(username='president')
+        u.set_password('123')
+        u.save()
+
+        q = Question(desc='test question')
+        q.save()
+
+        opt = QuestionOption(question=q, option='president')
+        opt.save()
+        
+        political_party = PoliticalParty(name='for president', acronym='test',description='test', headquarters='test')
+        political_party.save()
+
+        birthdate= date(2000, 2, 28)
+        userProfile = UserProfile(related_political_party=political_party,birthdate=birthdate,sex='F',related_user=u,province='S',employment='B')
+        userProfile.save()
+        
+        v = Voting(name='test voting', question=q, tipe='PP',political_party=political_party)
+        v.save()
+
+        a, _ = Auth.objects.get_or_create(url=settings.BASEURL,
+                                          defaults={'me': True, 'name': 'test auth'})
+        a.save()
+        v.auths.add(a)
+
+        return v     
+
+    def test_update_president_political_party(self):
+        
+    
+        v = self.create_voting_presidential_primaries()
+        self.create_voters(v)
+
+        v.create_pubkey()
+        v.start_date = timezone.now()
+        v.save()
+
+        self.store_votes(v)
+
+        self.login()  # set token
+        v.tally_votes(self.token)
+
+        tally = v.tally
+        tally.sort()
+        tally = {k: len(list(x)) for k, x in itertools.groupby(tally)}
+
+        political_party_DB = PoliticalParty.objects.get(name='for president')
+        self.assertEqual('president', political_party_DB.president)
+
+
+    def create_voting_senate_primaries(self):
+
+        u = User(username='senator')
+        u.set_password('123')
+        u.save()
+
+        q = Question(desc='test question')
+        q.save()
+
+        opt = QuestionOption(question=q, option='senator')
+        opt.save()
+        
+        political_party = PoliticalParty(name='for senator', acronym='test',description='test', headquarters='test')
+        political_party.save()
+
+        birthdate= date(2000, 2, 28)
+        userProfile = UserProfile(related_political_party=political_party,birthdate=birthdate,sex='F',related_user=u,province='S',employment='B')
+        userProfile.save()
+        
+        v = Voting(name='test voting', question=q, tipe='SP',political_party=political_party)
+        v.save()
+
+        a, _ = Auth.objects.get_or_create(url=settings.BASEURL,
+                                          defaults={'me': True, 'name': 'test auth'})
+        a.save()
+        v.auths.add(a)
+
+        return v
+
+
+    def test_appoint_senator(self):
+
+        v = self.create_voting_senate_primaries()
+        self.create_voters(v)
+
+        v.create_pubkey()
+        v.start_date = timezone.now()
+        v.save()
+
+        self.store_votes(v)
+
+        self.login()  # set token
+        v.tally_votes(self.token)
+
+        tally = v.tally
+        tally.sort()
+        tally = {k: len(list(x)) for k, x in itertools.groupby(tally)}
+
+        user=User.objects.get(username='senator')
+        user_profile_DB = UserProfile.objects.get(related_user=user)
+        self.assertEqual('S', user_profile_DB.employment)
+
+
 class VotingsPerUserAPI(BaseTestCase):
 
     def setUp(self):
@@ -255,3 +397,4 @@ class VotingsPerUserAPI(BaseTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
 
+   

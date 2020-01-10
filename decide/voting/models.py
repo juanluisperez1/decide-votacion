@@ -157,7 +157,6 @@ class Voting(models.Model):
                     raise ValidationError(_('The users in the options can not be a president.'))
     
                 years= age_calculator(userProfile.birthdate)
-                print(years)
                 if(years<18):
                     raise ValidationError(_('All users of the options must be over 18 years of age.'))
 
@@ -332,7 +331,6 @@ class Voting(models.Model):
         for w in optsWithoutWinner:
             if(w['votes'] == winner['votes']):
                 tie=True
-                print('empate')
                 break        
                 
         if(self.tipe=='PP'):
