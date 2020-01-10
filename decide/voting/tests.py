@@ -6,7 +6,8 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework.test import APITestCase
-
+from django.urls import reverse
+from rest_framework import status
 from base import mods
 from base.tests import BaseTestCase
 from census.models import Census
@@ -18,6 +19,7 @@ from django.db import IntegrityError
 from django.db import transaction
 from authentication.models import UserProfile
 from datetime import date
+from .serializers import  PoliticalPartySerializer
 
 
 class VotingTestCase(BaseTestCase):
@@ -397,4 +399,53 @@ class VotingsPerUserAPI(BaseTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
 
-   
+
+
+class GetAllPoliticalPartyTestAPI(TestCase):
+    # Declaramos varios objetos del tipo PArtido Político para popular la base de datos
+
+    def setUp(self):
+        PoliticalParty.objects.create(
+            name='Partido Selenium', acronym='PSM', description='Una descripcion válida', headquarters='calle inventada', image='http://unaurl.com')
+        PoliticalParty.objects.create(
+            name='Partido Selenium 2', acronym='PSM2', description='Una descripcion válida2', headquarters='calle inventada2', image='http://unaurl.com2')
+        PoliticalParty.objects.create(
+            name='Partido Selenium 3', acronym='PSM3', description='Una descripcion válida3', headquarters='calle inventada3', image='http://unaurl.com3')
+        PoliticalParty.objects.create(
+            name='Partido Selenium 4', acronym='PSM4', description='Una descripcion válida4', headquarters='calle inventada4', image='http://unaurl.com4')
+
+    def test_get_all_puppies(self):
+        # get API response
+        response = self.client.get(reverse('get_post_politicalparty'))
+        # get data from db
+        politicalparties = PoliticalParty.objects.all()
+        serializer = PoliticalPartySerializer(politicalparties, many=True)
+        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+class GetSinglePoliticalPartyTest(TestCase):
+    # Declaramos varios objetos del tipo PArtido Político para popular la base de datos
+
+    def setUp(self):
+        self.psm1 = PoliticalParty.objects.create(
+            name='Partido Selenium', acronym='PSM', description='Una descripcion válida', headquarters='calle inventada', image='http://unaurl.com')
+        self.psm2 = PoliticalParty.objects.create(
+            name='Partido Selenium 1', acronym='PSM 1', description='Una descripcion válida 1', headquarters='calle inventada 1', image='http://unaurl.com1')
+        self.psm3 = PoliticalParty.objects.create(
+            name='Partido Selenium 2', acronym='PSM 2', description='Una descripcion válida 2', headquarters='calle inventada 2', image='http://unaurl.com2')
+        self.psm5 = PoliticalParty.objects.create(
+            name='Partido Selenium 3', acronym='PSM 3', description='Una descripcion válida 3', headquarters='calle inventada 3', image='http://unaurl.com3')
+
+    def test_get_valid_single_politicalParty(self):
+        response = self.client.get(
+            reverse('get_delete_update_politicalparty', kwargs={'pk': self.psm1.pk}))
+        politicalparty = PoliticalParty.objects.get(pk=self.psm1.pk)
+        serializer = PoliticalPartySerializer(politicalparty)
+        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_invalid_single_politicalParty(self):
+        response = self.client.get(
+            reverse('get_delete_update_politicalparty', kwargs={'pk': 30}))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
