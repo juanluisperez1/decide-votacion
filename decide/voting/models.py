@@ -30,8 +30,6 @@ def age_calculator(birthdate):
    else: 
        return today.year - birthdate.year 
 
-
-
 class PoliticalParty(models.Model):
 
     name = models.CharField(('Name'),max_length=200)
