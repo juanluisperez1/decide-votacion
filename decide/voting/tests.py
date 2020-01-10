@@ -13,7 +13,9 @@ from census.models import Census
 from mixnet.mixcrypt import ElGamal
 from mixnet.mixcrypt import MixCrypt
 from mixnet.models import Auth
-from voting.models import Voting, Question, QuestionOption
+from voting.models import Voting, Question, QuestionOption, PoliticalParty
+from django.db import IntegrityError
+from django.db import transaction
 
 
 class VotingTestCase(BaseTestCase):
@@ -208,3 +210,39 @@ class VotingTestCase(BaseTestCase):
         response = self.client.put('/voting/{}/'.format(voting.pk), data, format='json')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), 'Voting already tallied')
+
+    def test_create_political_party(self):
+    
+        test=[
+             #We create a correct political party
+            ['test name','ta','test description','test headquarters','https;//testImage.es',None],
+            #We try create the same political party
+            ['test name','ta','test description','bad','https;//testImage.es',IntegrityError],
+            #We try create the a political party with a bad name
+            [None,'ta2','test description','bad','https;//testImage.es',IntegrityError],
+            #We try create the a political party with a bad acronym
+            ['test name',None,'test description','bad','https;//testImage.es',IntegrityError],
+            #We try create the a political party with a bad headquarters
+            ['test name',None,'test description',None,'https;//testImage.es',IntegrityError],
+            #We try create the a political party with a bad URL
+            ['test name',None,'test description',None,'testImage',IntegrityError]
+        ]
+        
+        for value in test:
+
+            try:
+                with transaction.atomic():
+                    political_party = PoliticalParty(name=value[0], acronym=value[1],description=value[2], headquarters=value[3],image=value[4])
+                    political_party.save()
+                    political_party_DB = PoliticalParty.objects.get(name=value[0])
+            
+                self.assertEqual(political_party, political_party_DB)
+
+                if(value[5] != None):
+                    self.assertEqual(False, True)
+
+            except value[5]:
+                self.assertEqual(True, True)
+            except Exception:    
+                self.assertEqual(False, True)
+
