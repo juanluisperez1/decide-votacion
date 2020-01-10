@@ -16,6 +16,8 @@ from mixnet.models import Auth
 from voting.models import Voting, Question, QuestionOption, PoliticalParty
 from django.db import IntegrityError
 from django.db import transaction
+from authentication.models import UserProfile
+from datetime import date
 
 
 class VotingTestCase(BaseTestCase):
@@ -245,4 +247,57 @@ class VotingTestCase(BaseTestCase):
                 self.assertEqual(True, True)
             except Exception:    
                 self.assertEqual(False, True)
+
+
+
+    def create_voting_presidential_primaries(self):
+
+        u = User(username='president')
+        u.set_password('123')
+        u.save()
+
+        q = Question(desc='test question')
+        q.save()
+
+        opt = QuestionOption(question=q, option='president')
+        opt.save()
+        
+        political_party = PoliticalParty(name='for president', acronym='test',description='test', headquarters='test')
+        political_party.save()
+
+        birthdate= date(2000, 2, 28)
+        userProfile = UserProfile(related_political_party=political_party,birthdate=birthdate,sex='F',related_user=u,province='S',employment='B')
+        userProfile.save()
+        
+        v = Voting(name='test voting', question=q, tipe='PP',political_party=political_party)
+        v.save()
+
+        a, _ = Auth.objects.get_or_create(url=settings.BASEURL,
+                                          defaults={'me': True, 'name': 'test auth'})
+        a.save()
+        v.auths.add(a)
+
+        return v     
+
+    def test_update_president_political_party(self):
+        
+    
+        v = self.create_voting_presidential_primaries()
+        self.create_voters(v)
+
+        v.create_pubkey()
+        v.start_date = timezone.now()
+        v.save()
+
+        self.store_votes(v)
+
+        self.login()  # set token
+        v.tally_votes(self.token)
+
+        tally = v.tally
+        tally.sort()
+        tally = {k: len(list(x)) for k, x in itertools.groupby(tally)}
+
+        political_party_DB = PoliticalParty.objects.get(name='for president')
+        self.assertEqual('president', political_party_DB.president)           
 
