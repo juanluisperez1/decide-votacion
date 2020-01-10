@@ -14,6 +14,7 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from authentication.models import UserProfile
 from datetime import date
+import collections
 
 def age_calculator(birthdate):  
          
@@ -97,7 +98,15 @@ class Voting(models.Model):
         (OTHER, 'Other'),
     ]
 
+    PROVINCE_OPTIONS = (
+        ('S', 'Sevillistán'),
+        ('H', 'Huelvistán'),
+	    ('C', 'Cadistán'),
+    )
+
     tipe = models.TextField(("Type"),blank=False, null=False, choices=TIPES_OF_VOTINGS)
+    province = models.CharField(('Province'), max_length=1,
+                                choices=PROVINCE_OPTIONS, null=True, blank=True)
     political_party = models.ForeignKey(PoliticalParty, related_name='voting', on_delete=models.CASCADE,blank=True, null=True,)
 
 
@@ -186,6 +195,54 @@ class Voting(models.Model):
                     raise ValidationError(_('All the user profiles of the users in the options must have a related political party.'))     
                 elif(hisPoliticalParty.president!=questionOption.option):
                     raise ValidationError(_('All the users in the options must be president of his corresponding political party.'))
+        
+        elif(self.tipe=='S'):
+
+            provinceVoting= self.province
+            
+            if(provinceVoting== None):
+                raise ValidationError(_('This type of votings must have a province.'))
+
+            question_id=self.question
+            allQuestionOptions = QuestionOption.objects.filter(question_id = question_id)
+            genderOfUsers=[]
+            if(len(allQuestionOptions) > 3):
+                raise ValidationError(_('There can only be three candidates per province.'))
+            for questionOption in allQuestionOptions:
+                
+                try:
+                    user = User.objects.get(username = questionOption.option)
+                except:
+                    raise ValidationError(_('You must put usernames in the question´s options.'))
+
+                try:
+                    userProfile = UserProfile.objects.get(related_user_id = user.id)
+                except:
+                    raise ValidationError(_('All the users in the options of the question must have a user profile.'))
+
+                hisPoliticalParty = userProfile.related_political_party
+                hisEmployment = userProfile.employment
+                hisProvince = userProfile.province
+                genderOfUsers.append(userProfile.sex)
+
+                
+
+                if(hisPoliticalParty==None):
+                    raise ValidationError(_('All the user profiles of the users in the options must have a related political party.'))     
+                if(hisEmployment!='S'):
+                    raise ValidationError(_('All the users in the options must be a Senator.'))
+                if(hisProvince!=provinceVoting):
+                    raise ValidationError(_('All the user profiles of the users in the options must have the same province as the voting.'))
+                if(hisPoliticalParty!=self.political_party):
+                    raise ValidationError(_('All the user profiles of the users in the options must have the same political party as the voting.'))
+            tupleNumberGenders = self.getDuplicatesWithCount(genderOfUsers)
+            if((len(allQuestionOptions)) == 2 and tupleNumberGenders != [1,1]):
+                raise ValidationError(_('There must be a relationship 1/2 between women and men and vice versa.'))
+            if((len(allQuestionOptions)) == 3 and tupleNumberGenders != [2,1] and tupleNumberGenders != [1,2]):
+                raise ValidationError(_('There must be a relationship 1/2 between women and men and vice versa.'))
+        if(self.province != None and self.tipe != 'S'):
+                raise ValidationError(_('You must select the type Senate if you select a province.'))
+
 
     def create_pubkey(self):
         if self.pub_key or not self.auths.count():
@@ -205,7 +262,7 @@ class Voting(models.Model):
     def get_votes(self, token=''):
         # gettings votes from store
         votes = mods.get('store', params={'voting_id': self.id}, HTTP_AUTHORIZATION='Token ' + token)
-        # anon votes
+        #anon votes
         return [[i['a'], i['b']] for i in votes]
 
     def tally_votes(self, token=''):
@@ -246,10 +303,12 @@ class Voting(models.Model):
         tally = self.tally
         options = self.question.options.all()
 
+        res = self.multiple_votes(tally)
+
         opts = []
         for opt in options:
             if isinstance(tally, list):
-                votes = tally.count(opt.number)
+                votes = res.count(opt.number)
             else:
                 votes = 0
             opts.append({
@@ -306,6 +365,30 @@ class Voting(models.Model):
 
         
         return tie
+
+    def multiple_votes(self,tally):
+        res=[]
+        for x in tally:
+            for y in str(x):
+                res.append(int(y))
+        return res
+    
+    def getDuplicatesWithCount(self,lista):
+        res = []
+        dictOfElems = dict()
+        
+        for elem in lista:
+            if elem in dictOfElems:
+                dictOfElems[elem] += 1
+            else:
+                dictOfElems[elem] = 1    
+    
+        dictOfElems = { key:value for key, value in dictOfElems.items()}
+    
+        for key, value in dictOfElems.items():
+            res.append(value)
+        return res
+
 
     def __str__(self):
         return self.name

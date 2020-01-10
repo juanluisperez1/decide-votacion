@@ -50,7 +50,7 @@
             </b-form>
 
             <!-- Voting -->
-            <div v-if="!signup">
+          <!--  <div v-if="!signup">
                 <h2>[[ voting.question.desc ]]</h2>
                 <b-form-group v-for="opt in voting.question.options" :key="opt.number">
                     <b-form-radio v-model="selected"
@@ -63,7 +63,30 @@
                 <b-button type="button" variant="primary" v-on:click="decideSend">
                     {% trans "Vote" %}
                 </b-button>
+            </div>-->
+            
+            <div v-if="!signup">
+                <h2>[[ voting.question.desc ]]</h2>
+                <b-form-group v-for="opt in voting.question.options" :key="opt.number">
+                    {% if TIPO == "S" %}
+                        <b-form-checkbox v-model="selected" :id="'q' + opt.number" name="question" :value="opt.number">
+                            [[ opt.option ]]
+                        </b-form-checkbox>
+                    {% else %}
+                        <b-form-radio v-model="selected" :id="'q' + opt.number" name="question" :value="opt.number">
+                            [[ opt.option ]]
+                        </b-form-radio>
+                    {% endif %}
+                                
+                </b-form-group>
+                <b-button type="button" variant="primary" v-on:click="decideSend">
+                    {% trans "Vote" %}
+                </b-button>
             </div>
+
+
+
+
         </div>
     </div>
 {% endblock %}
@@ -93,7 +116,7 @@
             data: {
                 keybits: {{ KEYBITS }},
                 voting: voting,
-                selected: "",
+                selected: [],
                 signup: true,
                 alertShow: false,
                 alertMsg: "",
