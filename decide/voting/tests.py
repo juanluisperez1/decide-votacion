@@ -212,3 +212,46 @@ class VotingTestCase(BaseTestCase):
         # response = self.client.put('/voting/{}/'.format(voting.pk), data, format='json')
         # self.assertEqual(response.status_code, 400)
         # self.assertEqual(response.json(), 'Voting already tallied')
+
+class VotingsPerUserAPI(BaseTestCase):
+
+    def setUp(self):
+        super().setUp()
+
+    def tearDown(self):
+        super().tearDown()
+
+    def test_get_voting_per_user_empty(self):
+
+        response = self.client.get('/voting/user/?id={}'.format(-1))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_get_voting_per_user(self):
+
+        for i in range(2):
+            q = Question(desc='test question')
+            q.save()
+            for j in range(5):
+                opt = QuestionOption(question=q, option='option {}'.format(j+1))
+                opt.save()
+            v = Voting(name='test voting', question=q, tipe='testType')
+            v.save()
+
+            a, _ = Auth.objects.get_or_create(url=settings.BASEURL,
+                                          defaults={'me': True, 'name': 'test auth'})
+            a.save()
+            v.auths.add(a)
+
+        u, _ = User.objects.get_or_create(username='voter')
+        u.is_active = True
+        u.save()
+
+        for v in Voting.objects.all():
+            c = Census(voter_id=u.id, voting_id=v.id)
+            c.save()
+
+        response = self.client.get('/voting/user/?id={}'.format(u.id))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+
