@@ -13,7 +13,9 @@ from census.models import Census
 from mixnet.mixcrypt import ElGamal
 from mixnet.mixcrypt import MixCrypt
 from mixnet.models import Auth
-from voting.models import Voting, Question, QuestionOption
+from voting.models import Voting, Question, QuestionOption, PoliticalParty
+from authentication.models import UserProfile
+from django.db import IntegrityError
 
 
 class VotingTestCase(BaseTestCase):
@@ -208,3 +210,62 @@ class VotingTestCase(BaseTestCase):
         response = self.client.put('/voting/{}/'.format(voting.pk), data, format='json')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), 'Voting already tallied')
+
+class PresidentialVoting(BaseTestCase):
+
+    def setUp(self):
+        super().setUp()
+
+    def tearDown(self):
+        super().tearDown()
+
+    def create_user(self):
+        u, _ = User.objects.get_or_create(username='president')
+        u.is_active = True
+        u.save()
+
+        politicalParty1 = self.create_political_party()
+
+        charPresident = "P"
+
+        userProfile1 = UserProfile.objects.create(
+            related_political_party = politicalParty1,
+            sex = 'F',
+            related_user = u,
+            province = 'C',
+            employment = 'P')
+
+        politicalParty1.president = 'president'
+        politicalParty1.save()
+
+    def create_political_party(self):
+        politicalParty1 = PoliticalParty.objects.create(
+            name='Partido Politico', 
+            acronym='PP', 
+            description='description', 
+            headquarters='False Street', 
+            image='http://image.com')
+        return politicalParty1
+            
+
+    def test_create_presidential_voting(self):
+        
+        self.create_user()
+        
+        q = Question(desc='Who do you want to be the president?')
+        q.save()
+    
+        opt = QuestionOption(question=q, option='president')
+        opt.save()
+
+        v = Voting(name='Presidential Voting', question=q, tipe='P')
+        v.save()
+
+        a, _ = Auth.objects.get_or_create(url=settings.BASEURL,
+                                          defaults={'me': True, 'name': 'test auth'})
+        a.save()
+        v.auths.add(a)
+
+        v.clean()
+        v.save()
+        self.assertEqual(True, True)
