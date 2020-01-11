@@ -2,7 +2,6 @@ import unittest
 from selenium import webdriver
 import time
 
-# este test debe ser ejecutado perfectamente por selenium
 class TestAddPoliticalParty(unittest.TestCase):
 
     def setUp(self):
@@ -10,7 +9,7 @@ class TestAddPoliticalParty(unittest.TestCase):
 
         
         
-    def test_signup_fire(self):
+    def test_create(self):
         #Realizamos login, con las credenciales a continuacion
         self.driver.get("http://localhost:8000/admin/login/?next=/admin/")
         self.driver.find_element_by_id('id_username').send_keys("user1")
@@ -37,24 +36,7 @@ class TestAddPoliticalParty(unittest.TestCase):
         self.assertTrue(len(self.driver.find_elements_by_class_name('success'))>0) 
         
 
-        
-
-    def tearDown(self):
-        self.driver.quit
-
-if __name__ == '__main__':
-    unittest.main()
-
-
-
-
-# este test debe ser ejecutado perfectamente por selenium
-class TestEditPoliticalParty(unittest.TestCase):
-
-    def setUp(self):
-        self.driver = webdriver.PhantomJS()
-        
-    def test_signup_fire(self):
+    def test_edit(self):
         #Realizamos login, con las credenciales a continuacion
         self.driver.get("http://localhost:8000/admin/login/?next=/admin/")
         self.driver.find_element_by_id('id_username').send_keys("user1")
@@ -86,24 +68,7 @@ class TestEditPoliticalParty(unittest.TestCase):
         # obtenemos finalmente el mensaje de que el partido se ha creado bien finalmente
         self.assertTrue(len(self.driver.find_elements_by_class_name('success'))>0) 
 
-    def tearDown(self):
-        self.driver.quit
-
-if __name__ == '__main__':
-    unittest.main()   
-
-
-
-
-
-#Volviendo a crear un partido ya existente debe de dar el test error
-
-class TestAddSamePoliticalParty(unittest.TestCase):
-
-    def setUp(self):
-        self.driver = webdriver.PhantomJS()
-        
-    def test_signup_fire(self):
+    def test_bad_edit(self):
         #Realizamos login, con las credenciales a continuacion
         self.driver.get("http://localhost:8000/admin/login/?next=/admin/")
         self.driver.find_element_by_id('id_username').send_keys("user1")
@@ -127,11 +92,11 @@ class TestAddSamePoliticalParty(unittest.TestCase):
         # una vez introducimos la informacion añadimos al partido
         self.driver.find_element_by_css_selector('input.default').click()
         # obtenemos el mesaje de error al ejecutar intenetar insertar un partido con la misma descripción y nombre
-        self.assertTrue(len(self.driver.find_elements_by_class_name('errornote'))>0) 
-
+        self.assertTrue(len(self.driver.find_elements_by_class_name('errornote'))>0)    
 
     def tearDown(self):
         self.driver.quit
 
 if __name__ == '__main__':
     unittest.main()
+
