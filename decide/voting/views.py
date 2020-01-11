@@ -6,7 +6,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 
 from .models import Question, QuestionOption, Voting, PoliticalParty
-from .serializers import SimpleVotingSerializer, VotingSerializer, VotingPerUserSerializer, PoliticalPartySerializer
+from .serializers import SimpleVotingSerializer, VotingSerializer, PoliticalPartySerializer
 from base.perms import UserIsStaff
 from base.models import Auth
 from census.models import Census
@@ -101,7 +101,7 @@ class VotingUpdate(generics.RetrieveUpdateDestroyAPIView):
         return Response(msg, status=st)
 
 class VotingsPerUser(generics.ListCreateAPIView):
-    serializer_class = VotingPerUserSerializer
+    serializer_class = VotingSerializer
 
     def get_queryset(self):
         queryset = []
