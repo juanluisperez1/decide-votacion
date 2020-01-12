@@ -1,0 +1,40 @@
+**Gestión de la construcción e integración continua**
+
+Vamos a usar una aproximación al proceso de integración conocido como “continuous Integration”, adaptado a las necesidades de la asignatura y de los grupos que tenemos, porque consideramos que es la forma más óptima de seguir el proceso de integración
+ya que este método ataca los problemas desde la raíz y no los deja para el final cuando ya son 
+demasiado grandes y difíciles de depurar.
+Si hacemos un cómputo general de todo el proyecto, algunas características sobre las que hacer referencia 
+en base al proceso de integración que seguimos serían las siguientes: 
+
+1.  Somos cinco grupos de trabajo en total, cada grupo se encarga de una de las siguientes zonas de trabajo: Autorizacion(Auth), Cabina(Booth), Censo, Visualizacion(Visualizer), Votación(Voting). Existe un repositorio general de trabajo llamado decide-moltres y aparte, por grupo existe un repositorio, en el que se realizara el código referente a su zona de trabajo comentada anteriormente. La organización de los mismos depende de la decisión del grupo a cargo. En resumen, nosotros realmente contamos con dos repositorios, el general donde haremos el pull request para subir el código, y un repositorio propio donde iremos actualizando el proyecto con las nuevas funcionalidades.
+2.	Tenemos los build automatizados gracias a la funcionalidad de la herramienta enseñada en las prácticas conocida como Travis. En nuestro grupo hemos decidido que solo ejecutaremos Travis cuando hagamos un commit a la rama master o a la rama develop de nuestro repositorio, ya que consideramos que las otras ramas que se crean a lo largo del proyecto son experimentales y que son para investigar cómo realizar nuevas funcionalidades para el proyecto, por lo que no es necesario que se corran las pruebas cada vez que se realice un commit en estas ramas. Sin embargo, si necesitamos hacerlo en la rama develop, ya que esta rama es la rama previa a la rama master y en ella si es conveniente que todo el código que hagamos commit este sin ningún tipo de error. Por supuesto, en la rama master también deben ejecutarse estos build para verificar que todo funciona correctamente. Estos builds pasaran una serie de test que tenemos preparados para verificar que no existe ningún error. 
+3.	Relacionado con los commit y la dinámica que sugiere el proceso de integración, no hemos podido seguir la dinámica de hacer un commit a la rama principal una vez al día ya que no contábamos con la funcionalidad o el código necesario para ello. Sin embargo, los días que no hacíamos ningún commit, nos encargábamos de investigar cómo manejar correctamente las herramientas que nos enseñaban en las prácticas o investigar como realizar una nueva funcionalidad nueva para el proyecto. Evidentemente, si no conseguimos terminar correctamente la nueva funcionalidad no íbamos a hacer un commit de código que no estuviera terminado. Esto ha sido otra de las razones por las que no podíamos hacer commit diarios.
+4.  Versionado: Vamos a utilizar solo dos variables, la “X”: representa cambios sustanciales en funcionalidad; la ”Y”: representa cambios menores en funcionalidad y se ira incrementando cada vez que hagamos una build en master.
+5.	Relacionado con Heroku: si estamos en la rama master, gracias nuevamente a Travis, lo hemos configurado para que se despliegue en Heroku automáticamente y podamos ver una versión real de cómo va nuestro proyecto corriendo en la web.
+6.	Organización con otros grupos: Nos hemos integrado con el grupo de **censo(Census)**, los cuales nos han proporcionado un método funcional donde se registren automáticamente en la base de datos a los usuarios que participen en una votación, para evitar que tengamos que pedir datos que ya hayan rellenado y evitar procesos repetidos a los usuarios.
+    Por otra parte, tambien nos hemos integrado con el grupo de **cabina(Booth)**, ya que este grupo nos pidió que les implementásemos una consulta en la API que les devolviera las votaciones en las q estuviera censada una persona, y también nos ha pedido que modificáramos nuestro serializer para conseguir una mayor funcionalidad en su parte de trabajo. Este cambio no nos ha modificado en nada a nuestra funcionalidad, era una modificación que simplemente ellos necesitaban para que no les llegaran una cadena de caracteres tan grande como le sucedía con el formato original. En lugar de eso, les cambiamos nuestro serializer para que pudieran recibir tipos de Integer en lugar de tipo Char. 
+    Además, nos hemos integrado también con el grupo de **autorización(Auth)**, ya que necesitábamos que nos añadieran un atributo en el tipo persona que fuera “partido político”, ya que a la hora de hacer la votación debíamos hacer algunas restricciones dependiendo del tipo de votación que iba a realizarce, donde por ejemplo en el tipo primarias, las personas que se presentan como una posible elección a la votación deben ser del mismo partido político.
+
+7.	Hemos seguido la metodología de Github Flow para desarrollar nuestro proyecto, donde hemos creado diferentes ramas, como puede ser la rama featureAPI, la rama featurePresidentialElections, entre otras, para desarrollar y probar las nuevas funcionalidades y características que queríamos implementar. Hemos realizado los diferentes commit que necesitábamos, todos ellos siguiendo una plantilla que predefinimos al principio del proyecto y que hemos comentado en otros documentos. Lo único que no hemos seguido exactamente del github flow han sido los pull request. Estos solo lo haremos cuando queramos hacer hacer merge con nuestros commit a la rama general donde todos los grupos subiremos nuestra parte. Aquí si es necesario que todos los demás grupos nos den el visto y bueno y nos comenten que les parece el código que vamos a subir al repositorio general por si ellos encontraran algún tipo de conflicto. En nuestro repositorio personal de nuestro grupo, cuando hemos hecho los merge, no hemos realizado los pull request debido a que todos estamos en contacto y nos vamos contando los cambios que hemos realizado, por lo que realmente al estar previamente informados no hemos visto necesario hacer los pull request dentro de nuestro repositorio.
+8.	Indicadores de calidad: En el proyecto usaremos las herramientas conocidas como Codacy, vinculadas con la herramienta Travis, para automatizar las pruebas y para hacer nuestro código más entendible. 
+    En concreto, Codacy es una herramienta que nos ayuda al control de la deuda Técnica y a mejorar la calidad y producción de nuestros equipos de desarrollo, revisando autimaticamente el estilo de nuestro código. Su lema es: revisa menos, haz el merge más rápido. 
+    Para que Codacy de el visto bueno al código del que haremos el commit, lo hemos configurado para tener estos indicadores de calidad de los builds que comentaremos a continuación, la mayoría de los indicadores que hemos elegido nos ayudan a escribir un código sin redundancias y más limpio y amigable para una persona externa al mismo, estos indicadores son: 
+      -	wildcard-import (W0401)
+      -	multiple-imports (C0410)
+      -	useless-return (R1711)
+      -	unused-variable (W0612)
+      -	unused-wildcard-import (W0614)
+      -	unused-import (W0611)
+      -	unreachable (W0101)
+      -	unused-argument (W0613)
+      -	self-assigning-variable(w0127)
+      -	wrong-spelling-in-comment (C0401)
+      -	coverage superior a 
+      -	complejidad ciclomatica 
+    
+    Por ejemplo, el indicador multiple imports, nos avisaría si tenemos multiples imports en una misma línea; el indicador unreachable, se usa cuando hay algún código detrás de una declaración "return" o "raise", a la que nunca se accederá. Estos entre otros son algunas de las funciones de los indicadores que como hemos comentado nos ayudara a tener un mejor código.
+    Cuando empezamos el proyecto teníamos una métrica de 51 issues(debido al código por defecto que tenemos de wadobo), un coverage del 85% y un certifica de clasificación A. Una vez finalizado el proyecto, hemos conseguido tener una métrica de …
+
+
+
+
