@@ -33,24 +33,6 @@ class QuestionSerializer(serializers.HyperlinkedModelSerializer):
 
 class VotingSerializer(serializers.HyperlinkedModelSerializer):
     question = QuestionSerializer(many=False)
-    pub_key = KeySerializer()
-    auths = AuthSerializer(many=True)
-
-    class Meta:
-        model = Voting
-        fields = ('id', 'name', 'desc', 'question', 'start_date',
-                  'end_date', 'pub_key', 'auths', 'tally', 'postproc','tipe','province')
-
-
-class SimpleVotingSerializer(serializers.HyperlinkedModelSerializer):
-    question = QuestionSerializer(many=False)
-
-    class Meta:
-        model = Voting
-        fields = ('name', 'desc', 'question', 'start_date', 'end_date')
-
-class VotingPerUserSerializer(serializers.HyperlinkedModelSerializer):
-    question = QuestionSerializer(many=False)
     political_party = PoliticalPartySerializer(many=False)
     pub_key = KeySerializer()
     auths = AuthSerializer(many=True)
@@ -59,15 +41,13 @@ class VotingPerUserSerializer(serializers.HyperlinkedModelSerializer):
         model = Voting
         fields = ('id', 'name', 'desc', 'question', 'start_date',
                   'end_date', 'pub_key', 'auths', 'tally', 'postproc', 
-                  'tipe', 'political_party')       
+                  'tipe', 'province', 'political_party')       
 
 
 
-#Political Party Serializer
+class SimpleVotingSerializer(serializers.HyperlinkedModelSerializer):
+    question = QuestionSerializer(many=False)
 
-class PoliticalPartySerializer(serializers.HyperlinkedModelSerializer):
-    
     class Meta:
-        model = PoliticalParty
-        fields = ( 'name', 'acronym', 'description', 'headquarters',
-                  'image', 'president')   
+        model = Voting
+        fields = ('name', 'desc', 'question', 'start_date', 'end_date')

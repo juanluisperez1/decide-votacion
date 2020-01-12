@@ -20,6 +20,7 @@ from django.db import transaction
 from authentication.models import UserProfile
 from datetime import date
 from .serializers import  PoliticalPartySerializer
+from django.core.exceptions import ValidationError
 
 
 class VotingTestCase(BaseTestCase):
@@ -111,6 +112,24 @@ class VotingTestCase(BaseTestCase):
 
         for q in v.postproc:
             self.assertEqual(tally.get(q["number"], 0), q["votes"])
+
+    def create_voting_other(self):
+
+        q = Question(desc='test yes/no question', yes_no_question=True)
+        q.save()
+
+        opt = QuestionOption(question=q)
+        opt.save()
+        
+        v = Voting(name='test Other voting', desc='vamos a realizar una encuesta popular', question=q, tipe='O')
+        v.save()
+
+        a, _ = Auth.objects.get_or_create(url=settings.BASEURL,
+                                          defaults={'me': True, 'name': 'test auth'})
+        a.save()
+        v.auths.add(a)
+
+        return v
 
     def test_create_voting_from_api(self):
         data = {'name': 'Example'}
@@ -355,7 +374,230 @@ class VotingTestCase(BaseTestCase):
         user=User.objects.get(username='senator')
         user_profile_DB = UserProfile.objects.get(related_user=user)
         self.assertEqual('S', user_profile_DB.employment)
+    
+    def test_province_none_senator_voting_senate(self):
 
+        u = User(username='senator')
+        u.set_password('senator')
+        u.save()
+
+        q = Question(desc='Choose')
+        q.save()
+
+        opt = QuestionOption(question=q, option='senator')
+        opt.save()
+        
+        political_party = PoliticalParty(name='Partido Popular', acronym='PP', description='test', headquarters='test')
+        political_party.save()
+
+        birthdate= date(2000, 2, 28)
+        userProfile = UserProfile(related_political_party=political_party,birthdate=birthdate,sex='F',related_user=u,province='S',employment='S')
+        userProfile.save()
+        
+        v = Voting(name='test voting', question=q, tipe='S')
+        v.save()
+        
+
+        a, _ = Auth.objects.get_or_create(url=settings.BASEURL,
+                                        defaults={'me': True, 'name': 'test auth'})
+        a.save()
+        v.auths.add(a)
+        
+        
+        self.assertRaises(ValidationError, v.clean)    
+        
+    def test_employment_different_senator_voting_senate(self):
+
+        u = User(username='senator')
+        u.set_password('senator')
+        u.save()
+
+        q = Question(desc='Choose')
+        q.save()
+
+        opt = QuestionOption(question=q, option='senator')
+        opt.save()
+        
+        political_party = PoliticalParty(name='Partido Popular', acronym='PP', description='test', headquarters='test')
+        political_party.save()
+
+        birthdate= date(2000, 2, 28)
+        userProfile = UserProfile(related_political_party=political_party,birthdate=birthdate,sex='F',related_user=u,province='S',employment='B')
+        userProfile.save()
+        
+        v = Voting(name='test voting', question=q, tipe='S',province='S')
+        v.save()
+        
+
+        a, _ = Auth.objects.get_or_create(url=settings.BASEURL,
+                                        defaults={'me': True, 'name': 'test auth'})
+        a.save()
+        v.auths.add(a)
+        
+        
+
+        self.assertRaises(ValidationError, v.clean)
+    
+    def test_same_province_voting_senate(self):
+
+        u = User(username='senator')
+        u.set_password('senator')
+        u.save()
+
+        q = Question(desc='Choose')
+        q.save()
+
+        opt = QuestionOption(question=q, option='senator')
+        opt.save()
+        
+        political_party = PoliticalParty(name='Partido Popular', acronym='PP', description='test', headquarters='test')
+        political_party.save()
+
+        birthdate= date(2000, 2, 28)
+        userProfile = UserProfile(related_political_party=political_party,birthdate=birthdate,sex='F',related_user=u,province='H',employment='S')
+        userProfile.save()
+        
+        v = Voting(name='test voting', question=q, tipe='S',province='S')
+        v.save()
+        
+
+        a, _ = Auth.objects.get_or_create(url=settings.BASEURL,
+                                        defaults={'me': True, 'name': 'test auth'})
+        a.save()
+        v.auths.add(a)
+        
+        
+
+        self.assertRaises(ValidationError, v.clean)
+        
+
+    def test_province_selected_voting_senate(self):
+
+        u = User(username='senator')
+        u.set_password('senator')
+        u.save()
+
+        q = Question(desc='Choose')
+        q.save()
+
+        opt = QuestionOption(question=q, option='senator')
+       
+        opt.save()
+        
+        
+        political_party = PoliticalParty(name='Partido Popular', acronym='PP', description='test', headquarters='test')
+        political_party.save()
+
+
+        birthdate= date(2000, 2, 28)
+        userProfile = UserProfile(related_political_party=political_party,birthdate=birthdate,sex='F',related_user=u,province='S',employment='S')        
+        
+        userProfile.save()       
+        
+        v = Voting(name='test voting', question=q, tipe='O',province='S')
+        v.save()
+        
+
+        a, _ = Auth.objects.get_or_create(url=settings.BASEURL,
+                                        defaults={'me': True, 'name': 'test auth'})
+        a.save()
+        v.auths.add(a)
+        
+        
+
+        self.assertRaises(ValidationError, v.clean)
+
+    def test_no_political_party_voting_senate(self):
+
+        u = User(username='senator')
+        u.set_password('senator')
+        u.save()
+
+        q = Question(desc='Choose')
+        q.save()
+
+        opt = QuestionOption(question=q, option='senator')
+        opt.save()
+        
+        political_party = PoliticalParty(name='Partido Popular', acronym='PP', description='test', headquarters='test')
+        political_party.save()
+
+        birthdate= date(2000, 2, 28)
+        userProfile = UserProfile(related_political_party=political_party,birthdate=birthdate,sex='F',related_user=u,province='S',employment='S')
+        userProfile.save()
+        
+        v = Voting(name='test voting', question=q, tipe='S', province='S', political_party=political_party)
+        v.save()
+        
+
+        a, _ = Auth.objects.get_or_create(url=settings.BASEURL,
+                                        defaults={'me': True, 'name': 'test auth'})
+        a.save()
+        v.auths.add(a)
+        
+        
+        self.assertRaises(ValidationError, v.clean)
+    
+    def test_three_candidates_voting_senate(self):
+
+        u = User(username='senator')
+        u.set_password('senator')
+        u.save()
+
+        u1 = User(username='senator1')
+        u1.set_password('senator1')
+        u1.save()
+
+        u2 = User(username='senator2')
+        u2.set_password('senator2')
+        u2.save()
+
+        u3 = User(username='senator3')
+        u3.set_password('senator3')
+        u3.save()
+
+        q = Question(desc='Choose')
+        q.save()
+
+        opt1 = QuestionOption(question=q, option='senator')
+        opt1.save()
+
+        opt2 = QuestionOption(question=q, option='senator1')
+        opt2.save()
+
+        opt3 = QuestionOption(question=q, option='senator2')
+        opt3.save()
+
+        opt4 = QuestionOption(question=q, option='senator3')
+        opt4.save()
+        
+        political_party = PoliticalParty(name='Partido Popular', acronym='PP', description='test', headquarters='test')
+        political_party.save()
+
+        birthdate= date(2000, 2, 28)
+        userProfile = UserProfile(related_political_party=political_party,birthdate=birthdate,sex='F',related_user=u,province='S',employment='S')
+        userProfile.save()
+        
+        userProfile1 = UserProfile(related_political_party=political_party,birthdate=birthdate,sex='F',related_user=u1,province='S',employment='S')
+        userProfile1.save()
+
+        userProfile2 = UserProfile(related_political_party=political_party,birthdate=birthdate,sex='F',related_user=u2,province='S',employment='S')
+        userProfile2.save()
+
+        userProfile3 = UserProfile(related_political_party=political_party,birthdate=birthdate,sex='F',related_user=u3,province='S',employment='S')
+        userProfile3.save()
+        
+        v = Voting(name='test voting', question=q, tipe='S', province='S')
+        v.save()
+        
+
+        a, _ = Auth.objects.get_or_create(url=settings.BASEURL,
+                                        defaults={'me': True, 'name': 'test auth'})
+        a.save()
+        v.auths.add(a)
+        
+        
+        self.assertRaises(ValidationError, v.clean)
 
 class VotingsPerUserAPI(BaseTestCase):
 
@@ -449,3 +691,101 @@ class GetSinglePoliticalPartyTest(TestCase):
             reverse('get_delete_update_politicalparty', kwargs={'pk': 30}))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+
+class CreatePoliticalPartyFromAPITest(BaseTestCase):
+
+    def setUp(self):
+        super().setUp()
+
+    def tearDown(self):
+        super().tearDown()
+
+    def test_create_political_party_api(self):
+
+        #self.login()
+
+        data = {
+            'name': 'Partido político',
+            'acronym': 'PP',
+            'description': 'Description example',
+            'headquarters': 'False Street',
+        }
+
+        response = self.client.post('/voting/politicalparty/', data, format='json')
+        self.assertEqual(response.status_code, 201) # 201 created
+
+    def test_delete_political_party_api(self):
+
+        #self.login()
+
+        politicalParty1 = PoliticalParty.objects.create(
+            name='Partido Politico', 
+            acronym='PP', 
+            description='description', 
+            headquarters='False Street', 
+            image='http://image.com')
+
+        url = reverse('get_delete_update_politicalparty', kwargs={'pk': politicalParty1.pk})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, 204) # No content
+
+class PresidentialVoting(BaseTestCase):
+
+    def setUp(self):
+        super().setUp()
+
+    def tearDown(self):
+        super().tearDown()
+
+    def create_user(self):
+        u, _ = User.objects.get_or_create(username='president')
+        u.is_active = True
+        u.save()
+
+        politicalParty1 = self.create_political_party()
+
+        charPresident = "P"
+
+        userProfile1 = UserProfile.objects.create(
+            related_political_party = politicalParty1,
+            sex = 'F',
+            related_user = u,
+            province = 'C',
+            employment = 'P')
+
+        politicalParty1.president = 'president'
+        politicalParty1.save()
+
+    def create_political_party(self):
+        politicalParty1 = PoliticalParty.objects.create(
+            name='Partido Politico', 
+            acronym='PP', 
+            description='description', 
+            headquarters='False Street', 
+            image='http://image.com')
+        return politicalParty1
+            
+
+    def test_create_presidential_voting(self):
+        
+        self.create_user()
+        
+        q = Question(desc='Who do you want to be the president?')
+        q.save()
+    
+        opt = QuestionOption(question=q, option='president')
+        opt.save()
+
+        v = Voting(name='Presidential Voting', question=q, tipe='P')
+        v.save()
+
+        a, _ = Auth.objects.get_or_create(url=settings.BASEURL,
+                                          defaults={'me': True, 'name': 'test auth'})
+        a.save()
+        v.auths.add(a)
+
+        v.clean()
+        v.save()
+        self.assertEqual(True, True)
+
+    

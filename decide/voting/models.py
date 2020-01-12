@@ -200,11 +200,14 @@ class Voting(models.Model):
             if(provinceVoting== None):
                 raise ValidationError(_('This type of votings must have a province.'))
 
+            if(self.political_party!=None):
+                raise ValidationError(_('This type of votings must not have a political party.'))
+
             question_id=self.question
             allQuestionOptions = QuestionOption.objects.filter(question_id = question_id)
             genderOfUsers=[]
-            if(len(allQuestionOptions) > 3):
-                raise ValidationError(_('There can only be three candidates per province.'))
+            politicalPartiesOfUser=[]
+            
             for questionOption in allQuestionOptions:
                 
                 try:
@@ -221,6 +224,7 @@ class Voting(models.Model):
                 hisEmployment = userProfile.employment
                 hisProvince = userProfile.province
                 genderOfUsers.append(userProfile.sex)
+                politicalPartiesOfUser.append(userProfile.related_political_party)
 
                 
 
@@ -230,13 +234,11 @@ class Voting(models.Model):
                     raise ValidationError(_('All the users in the options must be a Senator.'))
                 if(hisProvince!=provinceVoting):
                     raise ValidationError(_('All the user profiles of the users in the options must have the same province as the voting.'))
-                if(hisPoliticalParty!=self.political_party):
-                    raise ValidationError(_('All the user profiles of the users in the options must have the same political party as the voting.'))
             tupleNumberGenders = self.getDuplicatesWithCount(genderOfUsers)
-            if((len(allQuestionOptions)) == 2 and tupleNumberGenders != [1,1]):
-                raise ValidationError(_('There must be a relationship 1/2 between women and men and vice versa.'))
-            if((len(allQuestionOptions)) == 3 and tupleNumberGenders != [2,1] and tupleNumberGenders != [1,2]):
-                raise ValidationError(_('There must be a relationship 1/2 between women and men and vice versa.'))
+            myList = list(dict.fromkeys(politicalPartiesOfUser))
+            for item in myList:
+                if (politicalPartiesOfUser.count(item) > 3):
+                    raise ValidationError(_('There can only be three candidates of the same political party per province.'))
         if(self.province != None and self.tipe != 'S'):
                 raise ValidationError(_('You must select the type Senate if you select a province.'))
 

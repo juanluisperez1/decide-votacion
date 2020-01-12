@@ -61,7 +61,7 @@ class TestAddPoliticalParty(unittest.TestCase):
         self.driver.find_element_by_name('_continue')
 
         #cambiamos el nombre del partido
-        self.driver.find_element_by_id('id_name').send_keys('edited')
+        self.driver.find_element_by_id('id_name').send_keys(' edited')
 
         #posteriormente guardamos para ver qeu se ha editado el partido en cuestion
         self.driver.find_element_by_css_selector('input.default').click()
@@ -83,8 +83,8 @@ class TestAddPoliticalParty(unittest.TestCase):
 
         #Añadimos todos los campos necesarios para poder guardar un partido politico
 
-        self.driver.find_element_by_id('id_name').send_keys('Partido de Selenium')
-        self.driver.find_element_by_id('id_acronym').send_keys('PSM')
+        self.driver.find_element_by_id('id_name').send_keys('Unidas podemos')
+        self.driver.find_element_by_id('id_acronym').send_keys('UP')
         self.driver.find_element_by_id('id_headquarters').send_keys('Madrid')
         self.driver.find_element_by_id('id_description').send_keys('Una descripción válida')
         self.driver.find_element_by_id('id_image').send_keys('http://estoesunapruebadeselenium.com')
@@ -94,9 +94,11 @@ class TestAddPoliticalParty(unittest.TestCase):
         # obtenemos el mesaje de error al ejecutar intenetar insertar un partido con la misma descripción y nombre
         self.assertTrue(len(self.driver.find_elements_by_class_name('errornote'))>0)    
 
+    
+
+    
     def tearDown(self):
         self.driver.quit
 
 if __name__ == '__main__':
     unittest.main()
-
