@@ -69,10 +69,10 @@ class PoliticalPartyAdmin(admin.ModelAdmin):
                                           defaults={'me': True, 'name': 'test auth'})                                   
         a.save()
         v.auths.add(a) 
-
+        v.yes_no_question = 'False'
         v.create_pubkey()
 
-        v.tipe = 'presidential'
+        v.tipe = 'P'
         v.save()
         self.message_user(request, "Presidential election successfully created" )  
 
