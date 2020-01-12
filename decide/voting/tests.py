@@ -20,6 +20,7 @@ from django.db import transaction
 from authentication.models import UserProfile
 from datetime import date
 from .serializers import  PoliticalPartySerializer
+from django.core.exceptions import ValidationError
 
 
 class VotingTestCase(BaseTestCase):
