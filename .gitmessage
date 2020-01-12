@@ -1,0 +1,14 @@
+#(50-69)characters
+<Type>: subjet
+
+#Body: 72 characters by line
+
+
+#Footer: References: #123 -> This commit influences the issue 123
+References: #
+
+
+#Type puede ser: feat, confing, fix, doc, style, refactor, test, intr
+
+
+
