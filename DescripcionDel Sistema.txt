@@ -1,0 +1,183 @@
+# **Descripción del sistema**
+
+## Sistema Decide
+
+Decide es un sistema de voto electrónico educativo que implementa un sistema básico de votación electrónica con voto secreto y criptográficamente seguro punto a punto. Además, es un sistema modular y extensible basado en subsistemas (módulos).
+
+Este sistema de software libre (código [https://github.com/wadobo/decide](aqui) ) aporta una implementación de referencia y permite su extensión en cualquier tecnología cumpliendo una API web básica.
+
+Decide consta de 8 módulos independientes, los cuales no dependen de un lenguaje de programación y están conectados mediante APIs. Gracias a esto podemos distribuir la carga en diferentes máquinas y se simplifica a la hora de abordar una tarea concreta.
+
+![Imagen de los modulos de decide](https://i.ibb.co/m63HKXd/Captura.png)
+
+Como podemos observar en la ilustración, decide se divide en 8 módulos conectados entre ellos más un módulo base que se encarga de las funcionalidades comunes.
+
+## Descripción general de los módulos
+
+A continuación, explicaremos a grandes rasgos en que consiste cada uno de estos módulos.
+
+* **Authentication** (autenticación)
+
+Permite la autenticación de los votantes.
+
+* **Census** (censo)
+
+Este módulo se encarga de guardar quién puede votar y quién ha votado.
+
+* **Voting** (votación)
+
+En este módulo se definen las votaciones (preguntas, opciones, tipo de voto, etc).
+
+* **Booth** (cabina)
+
+Booth se encarga de la cabina de votación en la que entrará el votante para emitir su voto.
+
+* **Mixnet**
+
+Éste módulo se encarga de la parte criptográfica. La mixnet sería una red de ordenadores (1 a n), los cuales generan una clave compartida para cifrar votos, por lo que solo se podrán descifrar los votos, una vez todas se pongan de acuerdo. En el recuento, el votante se desliga del voto, ya que cada autoridad realiza un barajado y se lo pasa a la siguiente, anonimizando el voto.
+
+* **Postproc** (postproducción)
+
+Realiza el postprocesado del voto, utilizando los resultados del recuento para generar un resultado coherente al tipo de votación.
+
+* **Visualizer** (visualización)
+
+Visualizador de datos. Parte de frontend en la que mostramos de la forma más visual posible los resultados obtenidos.
+
+* **Store**
+
+Se encarga de almacenar los votos cifrados.
+
+Esta información sobre decide ha sido obtenida de la siguiente [wiki](https://github.com/EGC-Decide/locaste/wiki/Documentaci%C3%B3n-de-proyecto-subsistema-Autenticaci%C3%B3n#8-gesti%C3%B3n-del-c%C3%B3digo-fuente) 
+
+## Nuestro módulo, Votación
+
+Una vez hemos echo un recorrido general por lo que es decide podemos entrar en materia y empezar a hablar de los incrementos y nuevas funcionalidades introducidas en este módulo.
+
+### Cambios introducidos
+
+Primero vamos a comentar toda la nueva funcionalidad que se a introducido al módulo de votación y posteriormente analizaremos cada una de ellas:
+
+_Nota_: cabe destacar que todos los cambios realizados están influenciados por el [https://1984.lsi.us.es/wiki-egc/index.php/Pliego_de_condiciones_del_proyecto_19-20](Pliego de condiciones) pero algunos cambios no son 100% fieles a él.
+
+1. Se ha añadido una nueva entidad Political party (partidos políticos).
+
+2. Se han introducido diferentes tipos de votaciones, los nuevos tipos introducidos son, cito textualmente al sistema que esta en ingles, presidential primaries (primarias de presidencia), senate primaries (primarias de senado), senate (senado), presidential (presidencial) y other (otro).
+
+3. Se ha añadido una nueva respuesta tipo _GET_ para la _API_ de las votaciones. Esta devuelve todas las votaciones de un usuario.
+
+4. Se ha creado una nueva _API_, la de los partidos políticos. Esta _API_ tiene las siguientes peticiones: _put_, _delete_, _get_one_, _list_all_ y el _post_
+
+5. Se añadió la opción de crear una pregunta yes/no autogenerada.
+
+6. Se añadió un método automático para generar votaciones del tipo presidential con los partidos políticos deseados.
+
+### Descripción y usabilidad de cada cambio
+
+1. Para cumplir con el pliego decidimos crear una nueva entidad los partidos políticos (Political parties en el sistema), el acceso a los CRUD de esta entidad se encuentra en la parte de administrador `/admin` , concretamente dentro del apartado `voting`
+
+![political party](https://i.ibb.co/q7jcJht/PP.png)
+
+podemos ver los atributos de esta nueva entidad dándole a `add`:
+
+![formulario PP](https://i.ibb.co/FHr1Vg9/PP2.png)
+
+Esta entidad es una entidad simple en la que podemos destacar 3 restricciones a la hora de crearla:
+-La primera: Solo un partido político puede tener el mismo name + acronym, para así evitar tener partidos políticos repetidos.
+-La segunda: La imagen debe ser un link.
+-La tercera: No se puede elegir un presidente de forma manual, es obligatorio hacer unas primarias de ese partido para elegirlo, cuando se realiza el recuento, automáticamente se selecciona el nuevo presidente.
+
+2. Este apartado es el core de nuestros cambios ya que casi todos nuestros incrementos giran entorno a realizar los diferentes tipos de votaciones, vamos a realizar un recorrido por los diferentes tipos, ya que tienen diferentes restricciones y funcionalidades. Pero antes de esto cabe destacar que se han añadido nuevos atributos a la entidad voting, estos nuevos atributos son tipe: donde se indica el tipo de la votación, province: donde se indica de que provincia es la votación y political party: que indica de que partido político es la votación, no todos los atributos son necesarios en todos los tipos. Aquí se muestra una imagen de los atributos de la votación:
+
+![](https://i.ibb.co/j8fBCvY/votacion.png)
+![](https://i.ibb.co/bvmgs5H/votacion2.png)
+
+una vez conocemos la estructura general de las votaciones podemos pasar a explicar los diferentes tipos:
+
+**Presidential Primaries**
+
+Este tipo tiene como objetivo crear una votación para elegir el presidente de un partido político. Una vez seleccionas este tipo en la votación se deben cumplir las siguientes restricciones:
+-La votación debe tener partido político
+-Las opciones de la votación deben ser usuarios del sistema, se introduce su username dentro del campo option:
+
+![](https://i.ibb.co/SKJDXn6/primariasp.png)
+
+Pero no puede ser cualquier usuario, este usuario debe tener un User profile (este es una nueva entidad que pedimos al equipo de autorización) y ese User profile debe tener relacionado el mismo partido político que la votación, además debe tener una edad de 18 años o más y en el employment un cargo de baron o presidente. Esto es así ya que solo los cargos altos de los partidos políticos pueden optar a ser presidentes, además los usuarios que decidan ser senadores no podrán optar a ser presidentes. Se muestra un ejemplo de User profile:
+
+![](https://i.ibb.co/8PQj72y/user-Profile.png)
+
+Para acabar con este tipo de votaciones remarcar que cuando una votación de este tipo finaliza y se realiza el recuento (stop y tally), automáticamente se hace presidente al ganador (se pone dentro del partido político y en su user profile, además se quita al anterior presidente si lo hubiera). Cabe destacar que si se da un empate se muestra un mensaje de que ha ocurrido un empate para informar al admin que uno de los ganadores empatados a sido seleccionado presidente, por si quieren realizar un desempate con otra votación.
+![](https://i.ibb.co/cvTDnkb/empate.png)
+  
+**Senate Primaries**
+
+Este tipo es muy similar al anterior por lo tanto solo se remarcarán las diferencias; cuando seleccionas una votación de tipo primaria de senado, las restricciones son las mismas lo único que cambia es que el usuario no puede ser presidente puesto que esto no es compatible según el pliego. La otra diferencia con las anteriores es que cuando la votación finaliza y es contada, se elige al ganador como senador, indicando esto en su user profile.
+
+**Presidential**
+
+Estas votaciones sirven para elegir al presidente de Españistán, el país para el cual se esta desarrollando el sistema. Las restricciones de esta votación son las siguientes: 
+- No pueden tener un partido político ni una provincia relacionada puesto que son generales para todo el país.
+- En las opciones de la votación solo se pueden incluir presidentes de los partidos políticos que se presenten a la votación. Por lo tanto estos usuarios deben haber sido elegido por un proceso de primarias presidenciales y ser el presidente de su partido actual.
+
+
+**Senate**
+
+Estas votaciones sirven para elegir a los senadores de Españistán. La elección se hace por provicina, es decir, se realiza una votación por cada provincia de Españistán, en nuestro caso Españistán tiene 3 provincias: Sevillistán, Cadistán y Huelvistán, y se elige un senador por cada provincia, en total habrá 3 senadores en Españistán, que serán los elegidos en las últimas votaciones de senado de cada provincia.
+
+Las restricciones de este tipo de votación son:
+- Estas votaciones deben tener una provincia asignada.
+- Estas votaciones no pueden tener un partido político relacionado ya que son votaciones a nivel nacional.
+- Al igual que las otras votaciones todas sus opciones deben ser usuarios del sistema y deben tener su user profile, y este debe tener un cargo de senador, es decir es senador de su partido y por lo tanto ha pasado un proceso de primarias de senado.
+- Un partido político solo puede presentar a tres senadores a las elecciones de senado por lo tanto las opciones de estas votaciones solo pueden tener a 3 senadores de un partido (más otros 3 de otro, ect) para optar a ser senador de Españistán.
+- Dentro de las opciones de estas votaciones la relación entre hombres y mujeres debe ser 1/2 o viceversa para fomentar la igualdad de géneros. Pero esta restricción finalmente no se pudo implementar por falta de tiempo, por lo tanto el sexo en el sistema actual no importa. 
+- Los senadores en las opciones deben ser de la misma provincia que la votación, es decir en su user profile deben tener dicha provincia.
+
+
+**Other**
+
+Este tipo es el más libre de todos ya que permite cualquier tipo de pregunta y opciones, tiene el objetivo de preguntar cosas variadas. Además solo con este tipo de pueden usar las Yes/No questions.
+
+3. Este cambio nació de una petición que nos realizó el módulo de cabina (se puede ver [aquí](https://github.com/decide-moltres/decide/issues/2)) y simplemente es una ampliación de la `API` de votación para realizar la petición usamos la siguiente URL: ./voting/user/?id=X donde la X es el id del user en cuestión. Ejemplo de petición:
+
+![](https://i.ibb.co/QFKxNzM/Captura-API.png)
+
+
+4. Implementamos una nueva `API `para los partidos políticos esta `API` tiene las siguientes peticiones: 
+Para realizar un _put _o _delete _o _get_one_  -> ./voting/politicalparty/(pk_policalparty que quieras)
+
+![](https://i.ibb.co/6y5tbHH/APIJL.png)
+
+Para realizar un _list_all_ o un el _post_     -> ./voting/politicalparty
+
+![](https://i.ibb.co/ScLQJyV/jl.png)
+
+5. En las option de las question se puede seleccionar el checkbox que se ve en la imagen de abajo, si se selecciona este checkbox se crea una opción con Yes, y otra NO para así crear una yes/no question. Cabe destacar que se ignora las option que el usuario escriba y se sustituyen por yes/no
+ 
+![](https://i.ibb.co/qWrZFQb/Alvaro.png)
+
+6. Este método se puede llamar dentro de la vista de partidos políticos y lo que hace es crear una votación presidencial donde se presentan todos los partidos políticos seleccionados, siendo las opciones de esta votación sus presidentes actuales.
+Aquí se crea:
+
+![](https://i.ibb.co/VpZb35c/Raul.png)
+
+Y este es el resultado:
+
+![](https://i.ibb.co/KbVLNcp/seRAUL.png)
+![](https://i.ibb.co/F5W7pSJ/RAUL2.png)
+
+-CUIDADO: Si eliges a un partido que no tenga presidente aparecerá el siguiente error, puesto que todos los partidos que se presenten deben tener un presidente que será el que participará en la votación:
+
+![](https://i.ibb.co/dJfVTcC/Captura.png) 
+
+
+### Relación con el resto de subsistemas
+
+Nuestra nueva funcionalidad solo influye a dos subsistemas de los que tenemos en nuestro proyecto. Estos son Cabina y autorización.
+ 
+* La relación con autorización  se da a través de la entidad User Profile, ya que toda nuestra funcionalidad está basada en ella, por eso mismo nos tuvieron que subir su condigo referente a esa parte a nuestro repositorio pues que es esencial para nosotros. La integración continua con este módulo fue ideal ya que les realizamos las peticiones y al poco tiempo las teníamos en nuestro repositorio integradas.
+
+* La relación con cabina se basa en la API, ellos tiene un sistema de cabina aparte de decide, por lo tanto realizan llamadas a nuestro decide a través de la API. Ellos nos realizaron una serie de peticiones para aumentar dicha API y para adaptarla a nuestros cambios y nosotros las realizamos y subimos al repositorio común.
+
+
+
+
