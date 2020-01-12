@@ -92,7 +92,6 @@ class TestAddPoliticalParty(unittest.TestCase):
         # una vez introducimos la informacion añadimos al partido
         self.driver.find_element_by_css_selector('input.default').click()
         # obtenemos el mesaje de error al ejecutar intenetar insertar un partido con la misma descripción y nombre
-        print('aqui estamos e el bad')
         self.assertTrue(len(self.driver.find_elements_by_class_name('errornote'))>0)    
 
     
