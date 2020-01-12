@@ -712,3 +712,40 @@ class GetSinglePoliticalPartyTest(TestCase):
             reverse('get_delete_update_politicalparty', kwargs={'pk': 30}))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+
+class CreatePoliticalPartyFromAPITest(BaseTestCase):
+
+    def setUp(self):
+        super().setUp()
+
+    def tearDown(self):
+        super().tearDown()
+
+    def test_create_political_party_api(self):
+
+        #self.login()
+
+        data = {
+            'name': 'Partido político',
+            'acronym': 'PP',
+            'description': 'Description example',
+            'headquarters': 'False Street',
+        }
+
+        response = self.client.post('/voting/politicalparty/', data, format='json')
+        self.assertEqual(response.status_code, 201) # 201 created
+
+    def test_delete_political_party_api(self):
+
+        #self.login()
+
+        politicalParty1 = PoliticalParty.objects.create(
+            name='Partido Politico', 
+            acronym='PP', 
+            description='description', 
+            headquarters='False Street', 
+            image='http://image.com')
+
+        url = reverse('get_delete_update_politicalparty', kwargs={'pk': politicalParty1.pk})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, 204) # No content
