@@ -106,6 +106,24 @@ class VotingTestCase(BaseTestCase):
         for q in v.postproc:
             self.assertEqual(tally.get(q["number"], 0), q["votes"])
 
+    def create_voting_other(self):
+
+        q = Question(desc='test yes/no question', yes_no_question=True)
+        q.save()
+
+        opt = QuestionOption(question=q)
+        opt.save()
+        
+        v = Voting(name='test Other voting', desc='vamos a realizar una encuesta popular', question=q, tipe='O')
+        v.save()
+
+        a, _ = Auth.objects.get_or_create(url=settings.BASEURL,
+                                          defaults={'me': True, 'name': 'test auth'})
+        a.save()
+        v.auths.add(a)
+
+        return v
+
     def test_create_voting_from_api(self):
         data = {'name': 'Example'}
         response = self.client.post('/voting/', data, format='json')
