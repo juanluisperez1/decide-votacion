@@ -87,13 +87,14 @@ class Voting(models.Model):
     SENATE = 'S'
     PRESIDENTIAL = 'P'
     OTHER = 'O'
+    ONLY3='O3'
 
     TIPES_OF_VOTINGS = [
         (PRESIDENTIALPRIMARIES, 'Presidential primaries'),
         (SENATEPRIMARIES, 'Senate primaries'),
         (SENATE, 'Senate'),
         (PRESIDENTIAL, 'Presidential'),
-        (OTHER, 'Other'),
+        (OTHER, 'Other'),(ONLY3, 'O3'),
     ]
 
     PROVINCE_OPTIONS = (
@@ -118,6 +119,16 @@ class Voting(models.Model):
     postproc = JSONField(blank=True, null=True)
 
     def clean(self):
+
+        if(self.tipe=='O3'):
+
+            question_id=self.question
+            allQuestionOptions = QuestionOption.objects.filter(question_id = question_id)
+
+            if(len(allQuestionOptions)>3):
+                raise ValidationError(_('Only you could select three candidates.'))
+
+
 
         if(self.tipe=='O'):
             
