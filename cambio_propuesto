@@ -1,0 +1,26 @@
+
+Cambios Realizado para el cambio propuesto
+
+en los archivos model.py de el módulo voting añadir las siguientes opciones
+
+Añadir el cambio en cuestión a al tipo de voting
+
+línea 90 ONLY3='O3'
+
+línea 97 añadir (ONLY3, 'O3'),
+
+
+
+
+
+se debe de añadir las siguientes líneas en el clean
+
+línea 123
+
+if(self.tipe=='O3'):
+
+            question_id=self.question
+            allQuestionOptions = QuestionOption.objects.filter(question_id = question_id)
+
+            if(len(allQuestionOptions)>3):
+                raise ValidationError(_('Only you could select three candidates.'))
